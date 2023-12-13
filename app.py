@@ -74,39 +74,35 @@ X = ss.drop('sm_li', axis=1)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=10)
 
-categorical_features = ['educ2', 'marital', 'gender']
-numeric_features = ['income', 'par', 'age']
+categorical_cols = X_train.select_dtypes(include=['object']).columns
+numeric_cols = X_train.select_dtypes(include=['number']).columns
 
 numeric_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='median')),
+    ('imputer', SimpleImputer(strategy='mean')),
     ('scaler', StandardScaler())
 ])
 
 categorical_transformer = Pipeline(steps=[
     ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
-    ('onehot', OneHotEncoder(handle_unknown='ignore'))
+    ('onehot', OneHotEncoder(drop='first', handle_unknown='error'))
 ])
 
 preprocessor = ColumnTransformer(
     transformers=[
-        ('num', numeric_transformer, numeric_features),
-        ('cat', categorical_transformer, categorical_features)
+        ('num', numeric_transformer, numeric_cols),
+        ('cat', categorical_transformer, categorical_cols)
     ])
 
 pipeline = Pipeline([
     ('preprocessor', preprocessor),
-    ('classifier', LogisticRegression(class_weight='balanced', random_state=42))
+    ('classifier', LogisticRegression(class_weight='balanced', random_state=10))
 ])
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=10)
 
 pipeline.fit(X_train, y_train)
 
 y_pred = pipeline.predict(X_test)
 
 accuracy = accuracy_score(y_test, y_pred)
-
-conf_matrix = confusion_matrix(y_test, y_pred)
 
 conf_matrix = confusion_matrix(y_test, y_pred)
 
@@ -143,7 +139,6 @@ probabilities_2 = pipeline.named_steps['classifier'].predict_proba(X_example_2)
 
 def main():
     st.title("LinkedIn Tool Prediction")
-
     st.sidebar.header("Please answer a few questions:")
     income = st.sidebar.slider("What is your income?", 1, 8, 5)
     educ2 = st.sidebar.selectbox("Highest level of education?", ['Less than high school', 'High school incomplete', 'High school graduate', 'Some college, no degree', 'Two-year associate degree', 'Four-year college or university degree', 'Some postgraduate or professional schooling', 'Postgraduate or professional degree'])
